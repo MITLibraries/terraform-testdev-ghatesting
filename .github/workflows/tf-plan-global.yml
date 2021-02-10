@@ -1,0 +1,150 @@
+name: Terraform Plan for PR (global)
+on: 
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'shared/core/**'
+  workflow_dispatch:
+
+# Set defaults
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  generate-matrix:
+    # See https://github.community/t/check-pushed-file-changes-with-git-diff-tree-in-github-actions/17220/10 for the 
+    #   source of this block of code. The first job builds the matrix of folders with terraform changes.
+    name: Generate matrix for tf plan
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check changed files
+        id: diff
+        # The messy awk/sed/grep filter after the git diff command is intended to force this to only list the ./shared/core/
+        #   folder for processing with the "global" workspace. I tried to get this to work in one workflow with some if 
+        #   statements in the matrix:strategy portion, but it didn't work.
+        run: |
+          if [ $GITHUB_BASE_REF ]; then
+            # Pull Request
+            git fetch origin $GITHUB_BASE_REF --depth=1
+            export DIFF=$( git diff --dirstat=files,0,cumulative origin/$GITHUB_BASE_REF $GITHUB_SHA | awk -F ' ' '{print $2}' | sed 's:/*$::' | grep -E '(/core)' )
+            echo "PR Diff between origin/$GITHUB_BASE_REF and $GITHUB_SHA"
+          else
+            # Push
+            git fetch origin ${{ github.event.before }} --depth=1
+            export DIFF=$( git diff --dirstat=files,0,cumulative ${{ github.event.before }} $GITHUB_SHA | awk -F ' ' '{print $2}' | sed 's:/*$::' | grep -E '(/core)' )
+            echo "Push Diff between ${{ github.event.before }} and $GITHUB_SHA"
+          fi
+          echo "$DIFF"
+          # Escape newlines (replace \n with %0A)
+          echo "::set-output name=diff::$( echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g' )"
+      - name: Set matrix for build
+        id: set-matrix
+        run: |
+          # See https://stackoverflow.com/a/62953566/11948346
+          DIFF="${{ steps.diff.outputs.diff }}"
+          JSON="{\"tfpaths\":["
+
+          # Loop by lines
+          while read path; do
+          # Add item to the matrix only if it is not already included
+          JSONline="\"$path\","
+          if [[ "$JSON" != *"$JSONline"* ]]; then
+          JSON="$JSON$JSONline"
+          fi
+          done <<< "$DIFF"
+
+          # Remove last "," and add closing brackets
+          if [[ $JSON == *, ]]; then
+          JSON="${JSON%?}"
+          fi
+          JSON="$JSON]}"
+          echo $JSON
+          # Set output
+          echo "::set-output name=matrix::$( echo "$JSON" )"
+
+  tfplan:
+    # Set workflow environment variables
+    env:
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    
+    # This splits out a matrix of jobs that processes each of the folders with updates to terraform code.
+    name: Run Terraform Plan on "${{ matrix.tfpaths }}"
+    needs: generate-matrix
+    strategy:
+      matrix: ${{fromJson(needs.generate-matrix.outputs.matrix)}}
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repo first
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Setup the other necessary environment
+      - name: Path Setup
+        id: paths 
+        run: |
+          echo "::set-output name=varpath::/tfvars/global/${{ matrix.tfpaths }}"
+          cp backend.hcl ${{ matrix.tfpaths }}
+          cp scripts/aws_parse.py ${{ matrix.tfpaths }}
+          cp scripts/requirements.txt ${{ matrix.tfpaths }}
+
+      # Setup terraform with the correct version
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 0.12.29
+
+      # Create the terraform.tfvars file
+      - name: Create tfvars
+        run: |
+          echo "working directory = ${{ matrix.tfpaths }}/"
+          python3 -m pip install -r requirements.txt
+          python3 aws_parse.py -p ${{ steps.paths.outputs.varpath }}
+        working-directory: ${{ matrix.tfpaths }}/
+
+      # Run Terraform Plan for global environment
+      - name: Terraform Plan (global)
+        id: tfplanglobal
+        run: |
+          echo "${{ matrix.tfpaths }}"
+          terraform init -backend-config=backend.hcl
+          TF_WORKSPACE=global terraform plan -no-color
+        working-directory: ${{ matrix.tfpaths }}/
+        continue-on-error: true
+      
+      # Publish the plan output in the Pull Request for global workspace
+      - name: output 
+        uses: actions/github-script@v3
+        env:
+          PLAN: "terraform\n${{ steps.tfplanglobal.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Plan 📖\`${{ steps.tfplanglobal.outcome }}\`
+            
+            <details><summary>Show Plan</summary>
+            
+            \`\`\`${process.env.PLAN}\`\`\`
+            
+            </details>
+            
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*`;
+              
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      # Proper exit status for failed terraform plan in the global environment
+      - name: Terraform Plan Status (global)
+        if: steps.tfplanglobal.outcome == 'failure'
+        run: exit 1
