@@ -1,12 +1,20 @@
 # GitHub Workflow Testing Template
 
-This is a Terraform monorepo used for testing GitHub Actions workflows. For more detailed documentation, see this private KB article.
+This is a Terraform monorepo used for testing GitHub Actions workflows. For more detailed documentation, see this private KB article [InfraEng KB](https://mitlibraries.atlassian.net/l/c/pu7F0K40).
 
 ## Workflows
 
 ### Terraform validate (tf-validate.yml)
 
-Much of this was based on information found here <https://github.community/t/check-pushed-file-changes-with-git-diff-tree-in-github-actions/17220/10> and here <https://stackoverflow.com/a/62953566/11948346>. The workflow process is pretty straightforward.
+Much of this was based on information found here 
+
+- <https://github.community/t/check-pushed-file-changes-with-git-diff-tree-in-github-actions/17220/10> 
+
+and here 
+
+- <https://stackoverflow.com/a/62953566/11948346>. 
+
+The workflow process is pretty straightforward.
 
 1. The first job uses `git diff` to capture the subfolders that have changes and creates a matrix.
 2. The second job uses the matrix output to kick off `terraform validate` for each subfolder with terraform changes.
