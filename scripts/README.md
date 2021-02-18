@@ -8,4 +8,4 @@ Before running the script, dependencies do need to be installed with the followi
     `python3 -m pip install -r requirements.txt`
  
 After installing the dependencies, run the script with 
-    `python3 aws_parse.py -p /global/budgets/ -r testdev_tf_cli_user`
+    `python3 aws_parse.py -p /global/budgets/`
