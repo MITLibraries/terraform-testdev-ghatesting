@@ -108,6 +108,7 @@ jobs:
       - name: Create tfvars
         run: |
           echo "working directory = ${{ matrix.tfpaths }}/"
+          sudo apt install pipenv
           pipenv install
           # python3 -m pip install -r requirements.txt
           python3 aws_parse.py -p ${{ steps.paths.outputs.varpath }}
