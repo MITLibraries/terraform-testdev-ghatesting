@@ -15,7 +15,10 @@ def main(path):
         for param in output['Parameters']:
             param_name = param['Name'][param['Name'].rfind('/') + 1:]
             param_value = param['Value']
-            f.write(f'{param_name} = "{param_value}"\n')
+            if param_value[0] == '{' :
+                f.write(f'{param_name} = {param_value}\n')
+            else:
+                f.write(f'{param_name} = "{param_value}"\n')
 
 
 if __name__ == '__main__':
