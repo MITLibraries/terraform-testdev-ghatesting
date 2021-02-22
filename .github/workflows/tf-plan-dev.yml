@@ -104,14 +104,19 @@ jobs:
         with:
           terraform_version: 0.12.29
 
+      # Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
       # Create the terraform.tfvars file
       - name: Create tfvars
         run: |
           echo "working directory = ${{ matrix.tfpaths }}/"
-          sudo apt install pipenv
+          pip install pipenv
           pipenv install
-          # python3 -m pip install -r requirements.txt
-          python3 aws_parse.py -p ${{ steps.paths.outputs.varpath }}
+          pipenv run python ./aws_parse.py -p ${{ steps.paths.outputs.varpath }}
         working-directory: ${{ matrix.tfpaths }}/
 
       # Run Terraform Plan for dev environment
