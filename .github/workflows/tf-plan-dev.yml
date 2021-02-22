@@ -96,6 +96,7 @@ jobs:
           cp backend.hcl ${{ matrix.tfpaths }}
           cp scripts/aws_parse.py ${{ matrix.tfpaths }}
           cp scripts/requirements.txt ${{ matrix.tfpaths }}
+          cp scripts/Pipfile ${{ matris.tfpaths }}
 
       # Setup terraform with the correct version
       - name: Terraform Setup
@@ -107,7 +108,8 @@ jobs:
       - name: Create tfvars
         run: |
           echo "working directory = ${{ matrix.tfpaths }}/"
-          python3 -m pip install -r requirements.txt
+          pipenv install
+          # python3 -m pip install -r requirements.txt
           python3 aws_parse.py -p ${{ steps.paths.outputs.varpath }}
         working-directory: ${{ matrix.tfpaths }}/
 
