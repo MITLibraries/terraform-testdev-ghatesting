@@ -95,7 +95,7 @@ jobs:
           echo "::set-output name=varpath::/tfvars/dev/${{ matrix.tfpaths }}"
           cp backend.hcl ${{ matrix.tfpaths }}
           cp scripts/aws_parse.py ${{ matrix.tfpaths }}
-          cp scripts/requirements.txt ${{ matrix.tfpaths }}
+          cp scripts/Pipfile ${{ matrix.tfpaths }}
 
       # Setup terraform with the correct version
       - name: Terraform Setup
@@ -103,12 +103,19 @@ jobs:
         with:
           terraform_version: 0.12.29
 
+      # Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
       # Create the terraform.tfvars file
       - name: Create tfvars
         run: |
           echo "working directory = ${{ matrix.tfpaths }}/"
-          python3 -m pip install -r requirements.txt
-          python3 aws_parse.py -p ${{ steps.paths.outputs.varpath }}
+          pip install pipenv
+          pipenv install
+          pipenv run python aws_parse.py -p ${{ steps.paths.outputs.varpath }}
         working-directory: ${{ matrix.tfpaths }}/
 
       # Run Terraform Plan for dev environment
@@ -117,7 +124,7 @@ jobs:
         run: |
           echo "${{ matrix.tfpaths }}"
           terraform init -backend-config=backend.hcl
-          TF_WORKSPACE=dev terraform plan -no-color
+          TF_WORKSPACE=dev terraform plan -no-color -var-file=terraform.tfvars
         working-directory: ${{ matrix.tfpaths }}/
         continue-on-error: true
       
