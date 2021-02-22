@@ -96,7 +96,7 @@ jobs:
           cp backend.hcl ${{ matrix.tfpaths }}
           cp scripts/aws_parse.py ${{ matrix.tfpaths }}
           cp scripts/requirements.txt ${{ matrix.tfpaths }}
-          cp scripts/Pipfile ${{ matris.tfpaths }}
+          cp scripts/Pipfile ${{ matrix.tfpaths }}
 
       # Setup terraform with the correct version
       - name: Terraform Setup
