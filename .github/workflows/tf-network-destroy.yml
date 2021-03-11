@@ -17,6 +17,13 @@ defaults:
 
 
 jobs:
+  tfdestroy:
+    # Set workflow environment variables
+    env:
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    
     # This splits out a matrix of jobs that process the code in shared/network in the dev 
     #   workspace and the prod workspace.
     name: Run Terraform Destroy on "${{ matrix.tfenvs }}"
