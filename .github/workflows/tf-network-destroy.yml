@@ -1,0 +1,69 @@
+name: Terraform Destroy Network
+
+# This can only be run manually or on a schedule and will always do the same thing:
+#   1. it will run terraform destroy for the shared/network for the dev environment
+#   2. it will run terraform destroy for the shared/network for the test environment
+# The schedule is Monday-Friday at 7:00pm.
+
+on: 
+  workflow_dispatch:
+  schedule:
+    - cron: '0 19 * * 1-5'
+
+# Set defaults
+defaults:
+  run:
+    shell: bash
+
+
+jobs:
+    # This splits out a matrix of jobs that process the code in shared/network in the dev 
+    #   workspace and the prod workspace.
+    name: Run Terraform Destroy on "${{ matrix.tfenvs }}"
+    strategy:
+      matrix:
+        tfenvs: [dev, test]
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repo first
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Setup the other necessary environment
+      - name: Path Setup
+        id: paths 
+        run: |
+          echo "::set-output name=varpath::/ghatesting/tfvars/${{ matrix.tfenvs }}/shared/network"
+          cp backend.hcl shared/network
+          cp scripts/aws_parse.py shared/network
+          cp scripts/requirements.txt shared/network
+
+      # Setup terraform with the correct version
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 0.12.29
+
+      # Create the terraform.tfvars file
+      - name: Create tfvars
+        run: |
+          echo "working directory = shared/network/"
+          python3 -m pip install -r requirements.txt
+          python3 aws_parse.py -p ${{ steps.paths.outputs.varpath }}
+        working-directory: shared/network/
+
+      # Run Terraform Init and Terraform Destroy
+      - name: Terraform Destroy
+        id: tfdestroy
+        run: |
+          echo "environment = ${{ matrix.tfenvs }}"
+          terraform init -backend-config=backend.hcl
+          TF_WORKSPACE=${{ matrix.tfenvs }} terraform destroy -auto-approve -no-color
+        working-directory: shared/network/
+        continue-on-error: true
+      
+      # Proper exit status for failed terraform destroy
+      - name: Terraform Destroy Status
+        if: steps.tfdestroy.outcome == 'failure'
+        run: exit 1
