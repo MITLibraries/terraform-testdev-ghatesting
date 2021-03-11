@@ -26,7 +26,7 @@ jobs:
     
     # This splits out a matrix of jobs that process the code in shared/network in the dev 
     #   workspace and the prod workspace.
-    name: Run Terraform Destroy on "${{ matrix.tfenvs }}"
+    name: Run Terraform Destroy
     strategy:
       matrix:
         tfenvs: [dev, test]
