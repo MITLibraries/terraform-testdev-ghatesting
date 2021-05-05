@@ -50,7 +50,7 @@ jobs:
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: 0.12.29
+          terraform_version: 0.12.31
 
       # Create the terraform.tfvars file
       - name: Create tfvars
