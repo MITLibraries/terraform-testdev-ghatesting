@@ -1,6 +1,6 @@
 # GitHub Workflow Testing Template
 
-This is a Terraform monorepo used for testing GitHub Actions workflows. For more detailed documentation, see this private KB article [InfraEng KB](https://mitlibraries.atlassian.net/l/c/pu7F0K40).
+This is a Terraform monorepo used for testing GitHub Actions workflows. For more detailed documentation, see this private KB article [InfraEng KB](https://mitlibraries.atlassian.net/l/c/pu7F0K40). As of May 5th, 2021, the workflows use Terraform version 0.12.31.
 
 ## Workflows
 
