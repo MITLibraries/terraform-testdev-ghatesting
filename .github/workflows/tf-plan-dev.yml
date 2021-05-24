@@ -90,6 +90,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      # Output of all environment variables for testing
+      - name: echo-default-env-variables
+        run: |
+            echo "Home: ${HOME}"
+            echo "GITHUB_WORKFLOW: ${GITHUB_WORKFLOW}"
+            echo "GITHUB_ACTION: ${GITHUB_ACTION}"
+            echo "GITHUB_ACTION_PATH: ${GITHUB_ACTION_PATH}"
+            echo "GITHUB_ACTOR: ${GITHUB_ACTOR}"
+            echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}"
+            echo "GITHUB_EVENT_NAME: ${GITHUB_EVENT_NAME}"
+            echo "GITHUB_WORKSPACE: ${GITHUB_WORKSPACE}"
+            echo "GITHUB_SHA: ${GITHUB_SHA}"
+            echo "GITHUB_REF: ${GITHUB_REF}"
+            echo "GITHUB_HEAD_REF: ${GITHUB_HEAD_REF}"
+            echo "GITHUB_BASE_REF: ${GITHUB_BASE_REF}"
+      
       # Setup the other necessary environment bits
       #   The new path for variables in Parameter Store is
       #   /tfvars/<workspace>/<repo>/<branch>/<folder>/<subfolder>/<param_name>
