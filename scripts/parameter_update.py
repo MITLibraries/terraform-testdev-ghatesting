@@ -19,7 +19,7 @@ def main(file_name):
     fname_no_ext = os.path.splitext(os.path.basename(file_name))[0]
     repo = Repo(os.path.abspath(os.path.join(__file__, "../..")))
     repo_name = repo.remotes.origin.url.split(".git")[0].split("/")[-1]
-    branch_name = f"{repo_name}/{repo.active_branch.name}"
+    branch_name = f"{repo_name}/{repo.head.ref}"
     tags = [{"Key": "terraform", "Value": "false"},
             {"Key": "appname", "Value": file_path[-1]},
             {"Key": "environment", "Value": fname_no_ext}]
