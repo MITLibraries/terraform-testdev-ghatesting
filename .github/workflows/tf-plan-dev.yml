@@ -112,7 +112,7 @@ jobs:
       - name: Path Setup
         id: paths 
         run: |
-          echo "::set-output name=varpath::/tfvars/dev/${GITHUB_REPOSITORY#*/}/${GITHUB_REF##*/}/${{ matrix.tfpaths }}"
+          echo "::set-output name=varpath::/tfvars/dev/${GITHUB_REPOSITORY#*/}/${GITHUB_HEAD_REF}/${{ matrix.tfpaths }}"
 
       # Setup terraform with the correct version
       - name: Terraform Setup
@@ -133,7 +133,7 @@ jobs:
           echo "variables path = ${{ steps.paths.outputs.varpath }}"
           pip install pipenv
           pipenv install
-          pipenv run python ../../scripts/parameter_export.py -p ${{ matrix.tfpaths }} -b ${GITHUB_REF##*/}
+          pipenv run python ../../scripts/parameter_export.py -p ${{ matrix.tfpaths }} -b ${GITHUB_HEAD_REF}
         working-directory: ${{ matrix.tfpaths }}/
 
       # Run Terraform Plan for dev environment
