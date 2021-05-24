@@ -115,7 +115,7 @@ jobs:
           echo "working directory = ${{ matrix.tfpaths }}/"
           pip install pipenv
           pipenv install
-          pipenv run python ../../scripts/parameter_export.py -p ${{ steps.paths.outputs.varpath }}
+          pipenv run python ../../scripts/parameter_export.py -p ${{ matrix.tfpaths }}
         working-directory: ${{ matrix.tfpaths }}/
 
       # Run Terraform Plan for dev environment
