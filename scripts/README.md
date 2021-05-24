@@ -81,10 +81,10 @@ The `parameter_update.py` Python script will read variables from a local `<works
 
 ```bash
 cd <folder>/<subfolder>
-python3 ../../scripts/parameter_update.py -f <dev|test|global>.tfvars
+python3 ../../scripts/parameter_update.py -f <dev|test|global>.tfvars [-b <branch_name>]
 ```
 
-This will write the variable values found in `<workspace>.tfvars` to `/tfvars/<workspace>/terraform-testdev-core/<active_git_branch>/<folder>/<subfolder>/<variable_name>`.
+The `-b <branch_name>` is optional. If it is not included, the checked out branch name will be used in the variable path. This will write the variable values found in `<workspace>.tfvars` to `/tfvars/<workspace>/<repository_name>/<branch_name>/<folder>/<subfolder>/<variable_name>`.
 
 ### Script to gather variables from Parameter Store
 
@@ -94,10 +94,10 @@ The `parameter_export.py` Python script will read variables from AWS Parameter S
 cd <folder>/<subfolder>
 export AWS_PROFILE=<profile_name>
 export TF_WORKSPACE=<dev|test|global>
-python3 ../../scripts/parameter_export.py -p <folder>/<subfolder>`
+python3 ../../scripts/parameter_export.py -p <folder>/<subfolder> [-b <branch_name>]
 ```
 
-This will pull all of the variables (and their values) from `/tfvars/<workspace>/terraform-testdev-core/<active_git_branch>/<folder>/<subfolder>` and store them in a file named `terraform.tfvars`. It is up to the developer to move this file to the correctly named `.tfvars` folder for the workspace (e.g., `dev.tfvars`).
+The `-b <branch_name>` is optional. If it is not included, the checked out branch name will be used in the variable path. This will pull all of the variables (and their values) from `/tfvars/<workspace>/<repository_name>/<branch_name>/<folder>/<subfolder>` and store them in a file named `terraform.tfvars`. It is up to the developer to move this file to the correctly named `.tfvars` folder for the workspace (e.g., `dev.tfvars`). When this is run in automation in GitHub Actions (in an active PR) the `-b` option IS used and makes use of the GitHub Actions `GITHUB_HEAD_REF` default environment variable.
 
 ### Cleanup pipenv
 

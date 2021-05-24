@@ -73,6 +73,8 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      PIPENV_PIPFILE: ../../scripts/Pipfile
+      TF_WORKSPACE: global
     
     # This splits out a matrix of jobs that processes each of the folders with updates to terraform code.
     name: Run Terraform Plan on "${{ matrix.tfpaths }}"
@@ -86,27 +88,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Setup the other necessary environment
-      - name: Path Setup
-        id: paths 
-        run: |
-          echo "::set-output name=varpath::/tfvars/global/${{ matrix.tfpaths }}"
-          cp backend.hcl ${{ matrix.tfpaths }}
-          cp scripts/aws_parse.py ${{ matrix.tfpaths }}
-          cp scripts/requirements.txt ${{ matrix.tfpaths }}
-
+      # # Output of all environment variables for testing. This is left in here and commented out to make future troubleshooting easy
+      # - name: echo-default-env-variables
+      #   run: |
+      #       echo "Home: ${HOME}"
+      #       echo "GITHUB_WORKFLOW: ${GITHUB_WORKFLOW}"
+      #       echo "GITHUB_ACTION: ${GITHUB_ACTION}"
+      #       echo "GITHUB_ACTION_PATH: ${GITHUB_ACTION_PATH}"
+      #       echo "GITHUB_ACTOR: ${GITHUB_ACTOR}"
+      #       echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}"
+      #       echo "GITHUB_EVENT_NAME: ${GITHUB_EVENT_NAME}"
+      #       echo "GITHUB_WORKSPACE: ${GITHUB_WORKSPACE}"
+      #       echo "GITHUB_SHA: ${GITHUB_SHA}"
+      #       echo "GITHUB_REF: ${GITHUB_REF}"
+      #       echo "GITHUB_HEAD_REF: ${GITHUB_HEAD_REF}"
+      #       echo "GITHUB_BASE_REF: ${GITHUB_BASE_REF}"
+      
       # Setup terraform with the correct version
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 0.12.31
 
-      # Create the terraform.tfvars file
+      # Create the terraform.tfvars file. This expects that all the commands are run in subfolders
+      #   that are two (2) folders deep in the repository. It also depends on the PIPENV_PIPFILE environment
+      #   variable, the TF_WORKSPACE environment variable, and the GITHUB_HEAD_REF default environment variable.
+      #   The end result of this step is a correct terraform.tfvars file.
       - name: Create tfvars
         run: |
           echo "working directory = ${{ matrix.tfpaths }}/"
-          python3 -m pip install -r requirements.txt
-          python3 aws_parse.py -p ${{ steps.paths.outputs.varpath }}
+          pip install pipenv
+          pipenv install
+          pipenv run python ../../scripts/parameter_export.py -p ${{ matrix.tfpaths }} -b ${GITHUB_HEAD_REF}
         working-directory: ${{ matrix.tfpaths }}/
 
       # Run Terraform Plan for global environment
@@ -114,8 +127,8 @@ jobs:
         id: tfplanglobal
         run: |
           echo "${{ matrix.tfpaths }}"
-          terraform init -backend-config=backend.hcl
-          TF_WORKSPACE=global terraform plan -no-color
+          terraform init -backend-config=../../backend.hcl
+          terraform plan -no-color -var-file=terraform.tfvars
         working-directory: ${{ matrix.tfpaths }}/
         continue-on-error: true
       

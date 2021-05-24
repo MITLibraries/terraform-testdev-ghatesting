@@ -86,34 +86,26 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
-      # Checkout the repo first
+      # First thing to do is checkout the repository
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Output of all environment variables for testing
-      - name: echo-default-env-variables
-        run: |
-            echo "Home: ${HOME}"
-            echo "GITHUB_WORKFLOW: ${GITHUB_WORKFLOW}"
-            echo "GITHUB_ACTION: ${GITHUB_ACTION}"
-            echo "GITHUB_ACTION_PATH: ${GITHUB_ACTION_PATH}"
-            echo "GITHUB_ACTOR: ${GITHUB_ACTOR}"
-            echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}"
-            echo "GITHUB_EVENT_NAME: ${GITHUB_EVENT_NAME}"
-            echo "GITHUB_WORKSPACE: ${GITHUB_WORKSPACE}"
-            echo "GITHUB_SHA: ${GITHUB_SHA}"
-            echo "GITHUB_REF: ${GITHUB_REF}"
-            echo "GITHUB_HEAD_REF: ${GITHUB_HEAD_REF}"
-            echo "GITHUB_BASE_REF: ${GITHUB_BASE_REF}"
+      # # Output of all environment variables for testing. This is left in here and commented out to make future troubleshooting easy
+      # - name: echo-default-env-variables
+      #   run: |
+      #       echo "Home: ${HOME}"
+      #       echo "GITHUB_WORKFLOW: ${GITHUB_WORKFLOW}"
+      #       echo "GITHUB_ACTION: ${GITHUB_ACTION}"
+      #       echo "GITHUB_ACTION_PATH: ${GITHUB_ACTION_PATH}"
+      #       echo "GITHUB_ACTOR: ${GITHUB_ACTOR}"
+      #       echo "GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}"
+      #       echo "GITHUB_EVENT_NAME: ${GITHUB_EVENT_NAME}"
+      #       echo "GITHUB_WORKSPACE: ${GITHUB_WORKSPACE}"
+      #       echo "GITHUB_SHA: ${GITHUB_SHA}"
+      #       echo "GITHUB_REF: ${GITHUB_REF}"
+      #       echo "GITHUB_HEAD_REF: ${GITHUB_HEAD_REF}"
+      #       echo "GITHUB_BASE_REF: ${GITHUB_BASE_REF}"
       
-      # Setup the other necessary environment bits
-      #   The new path for variables in Parameter Store is
-      #   /tfvars/<workspace>/<repo>/<branch>/<folder>/<subfolder>/<param_name>
-      - name: Path Setup
-        id: paths 
-        run: |
-          echo "::set-output name=varpath::/tfvars/dev/${GITHUB_REPOSITORY#*/}/${GITHUB_HEAD_REF}/${{ matrix.tfpaths }}"
-
       # Setup terraform with the correct version
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
@@ -126,11 +118,13 @@ jobs:
         with:
           python-version: '3.8'
 
-      # Create the terraform.tfvars file
+      # Create the terraform.tfvars file. This expects that all the commands are run in subfolders
+      #   that are two (2) folders deep in the repository. It also depends on the PIPENV_PIPFILE environment
+      #   variable, the TF_WORKSPACE environment variable, and the GITHUB_HEAD_REF default environment variable.
+      #   The end result of this step is a correct terraform.tfvars file.
       - name: Create tfvars
         run: |
           echo "working directory = ${{ matrix.tfpaths }}/"
-          echo "variables path = ${{ steps.paths.outputs.varpath }}"
           pip install pipenv
           pipenv install
           pipenv run python ../../scripts/parameter_export.py -p ${{ matrix.tfpaths }} -b ${GITHUB_HEAD_REF}
@@ -142,7 +136,7 @@ jobs:
         run: |
           echo "${{ matrix.tfpaths }}"
           terraform init -backend-config=../../backend.hcl
-          TF_WORKSPACE=dev terraform plan -no-color -var-file=terraform.tfvars
+          terraform plan -no-color -var-file=terraform.tfvars
         working-directory: ${{ matrix.tfpaths }}/
         continue-on-error: true
       
