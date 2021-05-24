@@ -12,7 +12,7 @@ def main(path):
     repo = Repo(os.path.abspath(os.path.join(__file__, "../..")))
     repo_name = repo.remotes.origin.url.split(".git")[0].split("/")[-1]
     tf_ws = os.environ.get("TF_WORKSPACE")
-    full_path = f"/tfvars/{tf_ws}/{repo_name}/{repo.active_branch.name}/{path}"
+    full_path = f"/tfvars/{tf_ws}/{repo_name}/{repo.head.ref}/{path}"
     session = boto3.Session(profile_name=os.environ.get("AWS_PROFILE"))
     client = session.client("ssm")
     with open("terraform.tfvars", "w") as f:
