@@ -4,11 +4,11 @@ This is dummy Terraform code for GitHub Actions testing.
 
 ## What's created?
 
-* Nothing.
+* Nothing. Just used for testing GitHub Actions.
 
 ## Additional Info
 
-No additional info.
+No additional info. All the variables are now stored in the correct path.
 
 ## Inputs
 

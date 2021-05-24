@@ -17,7 +17,7 @@ and here
 The workflow process is pretty straightforward.
 
 1. The first job uses `git diff` to capture the subfolders that have changes and creates a matrix.
-2. The second job uses the matrix output to kick off `terraform validate` for each subfolder with terraform changes.
+2. The second job uses the matrix output to kick off `terraform fmt -check -recursive` and `terraform validate` for each subfolder with terraform changes.
 
 The `terraform validate` is run with `-backend=false` and doesn't need any variables.
 

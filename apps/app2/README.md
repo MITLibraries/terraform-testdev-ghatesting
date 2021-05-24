@@ -8,7 +8,7 @@ This is dummy Terraform code for GitHub Actions testing.
 
 ## Additional Info
 
-No additional info.
+No additional info. All the variables are now stored in the correct path.
 
 ## Inputs
 

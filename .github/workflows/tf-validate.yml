@@ -87,5 +87,5 @@ jobs:
       - name: Validate
         run: |
           echo "${{ matrix.tfpaths }}"
-          terraform fmt; terraform init -backend=false; terraform validate
+          terraform fmt -check -recursive; terraform init -backend=false; terraform validate
         working-directory: ${{ matrix.tfpaths }}

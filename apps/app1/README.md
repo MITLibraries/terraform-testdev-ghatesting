@@ -4,7 +4,7 @@ This is dummy Terraform code for GitHub Actions testing.
 
 ## What's created?
 
-* Nothing.
+* Nothing. All the variables are now stored in the correct path.
 
 ## Additional Info
 

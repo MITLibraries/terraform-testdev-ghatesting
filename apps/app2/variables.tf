@@ -9,7 +9,7 @@ variable "region" {
 variable "bucketname" {
   description = "The name of the thesis submit bucket"
   type        = string
-  default = "testdev_bucketname"
+  default     = "testdev_bucketname"
 }
 
 variable "s3_cors_rule" {
