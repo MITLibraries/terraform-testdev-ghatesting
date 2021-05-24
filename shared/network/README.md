@@ -4,7 +4,7 @@ This is dummy Terraform code for GitHub Actions testing.
 
 ## What's created?
 
-* Nothing.
+* Nothing. Just used for testing GitHub Actions.
 
 ## Additional Info
 
