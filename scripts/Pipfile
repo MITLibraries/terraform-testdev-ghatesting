@@ -7,7 +7,16 @@ verify_ssl = true
 
 [packages]
 boto3 = "*"
+botocore = "*"
 click = "*"
+jmespath = "*"
+lark-parser = "*"
+python-dateutil = "*"
+python-hcl2 = "*"
+s3transfer = "*"
+six = "*"
+urllib3 = "*"
+GitPython = "*"
 
 [requires]
 python_version = "3.8"

@@ -75,6 +75,7 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      PIPENV_PIPFILE: ../../scripts/Pipfile
     
     # This splits out a matrix of jobs that processes each of the folders with updates to terraform code.
     name: Run Terraform Plan on "${{ matrix.tfpaths }}"
@@ -88,14 +89,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Setup the other necessary environment
+      # Setup the other necessary environment bits
+      #   The new path for variables in Parameter Store is
+      #   /tfvars/<workspace>/<repo>/<branch>/<folder>/<subfolder>/<param_name>
       - name: Path Setup
         id: paths 
         run: |
-          echo "::set-output name=varpath::/tfvars/dev/${{ matrix.tfpaths }}"
-          cp backend.hcl ${{ matrix.tfpaths }}
-          cp scripts/aws_parse.py ${{ matrix.tfpaths }}
-          cp scripts/Pipfile ${{ matrix.tfpaths }}
+          echo "::set-output name=varpath::/tfvars/dev/${GITHUB_REPOSITORY#*/}/${GITHUB_REF##*/}/${{ matrix.tfpaths }}"
 
       # Setup terraform with the correct version
       - name: Terraform Setup
@@ -115,7 +115,7 @@ jobs:
           echo "working directory = ${{ matrix.tfpaths }}/"
           pip install pipenv
           pipenv install
-          pipenv run python aws_parse.py -p ${{ steps.paths.outputs.varpath }}
+          pipenv run python ../../scripts/parameter_export.py -p ${{ steps.paths.outputs.varpath }}
         working-directory: ${{ matrix.tfpaths }}/
 
       # Run Terraform Plan for dev environment
@@ -123,7 +123,7 @@ jobs:
         id: tfplandev
         run: |
           echo "${{ matrix.tfpaths }}"
-          terraform init -backend-config=backend.hcl
+          terraform init -backend-config=../../backend.hcl
           TF_WORKSPACE=dev terraform plan -no-color -var-file=terraform.tfvars
         working-directory: ${{ matrix.tfpaths }}/
         continue-on-error: true
