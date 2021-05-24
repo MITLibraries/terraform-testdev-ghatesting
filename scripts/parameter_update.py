@@ -11,7 +11,9 @@ import hcl2
 @click.command()
 @click.option("-f", "--file_name", prompt="Enter the file name",
               help="The tfvars file name.")
-def main(file_name):
+@click.option("-b", "--branch_name", default=None,
+              help="The branch name to be updated.")
+def main(file_name, branch_name):
     session = boto3.Session(profile_name=os.environ.get("AWS_PROFILE"))
     client = session.client("ssm")
     file_path = os.path.normpath(os.getcwd()).split(os.sep)
@@ -19,7 +21,9 @@ def main(file_name):
     fname_no_ext = os.path.splitext(os.path.basename(file_name))[0]
     repo = Repo(os.path.abspath(os.path.join(__file__, "../..")))
     repo_name = repo.remotes.origin.url.split(".git")[0].split("/")[-1]
-    branch_name = f"{repo_name}/{repo.head.ref}"
+    if branch_name is None:
+        branch_name = repo.head.ref
+    repo_branch = f"{repo_name}/{branch_name}"
     tags = [{"Key": "terraform", "Value": "false"},
             {"Key": "appname", "Value": file_path[-1]},
             {"Key": "environment", "Value": fname_no_ext}]
@@ -27,7 +31,7 @@ def main(file_name):
         params = hcl2.load(f)
         for param_name, param_value in params.items():
             full_param_name = (
-                f"/tfvars/{fname_no_ext}/{branch_name}/{dir_name}/{param_name}"
+                f"/tfvars/{fname_no_ext}/{repo_branch}/{dir_name}/{param_name}"
             )
             try:
                 output = client.get_parameter(Name=full_param_name)

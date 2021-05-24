@@ -114,9 +114,10 @@ jobs:
       - name: Create tfvars
         run: |
           echo "working directory = ${{ matrix.tfpaths }}/"
+          echo "variables path = ${{ steps.paths.outputs.varpath }}"
           pip install pipenv
           pipenv install
-          pipenv run python ../../scripts/parameter_export.py -p ${{ matrix.tfpaths }}
+          pipenv run python ../../scripts/parameter_export.py -p ${{ matrix.tfpaths }} -b ${GITHUB_REF##*/}
         working-directory: ${{ matrix.tfpaths }}/
 
       # Run Terraform Plan for dev environment
