@@ -76,6 +76,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       PIPENV_PIPFILE: ../../scripts/Pipfile
+      TF_WORKSPACE: dev
     
     # This splits out a matrix of jobs that processes each of the folders with updates to terraform code.
     name: Run Terraform Plan on "${{ matrix.tfpaths }}"
