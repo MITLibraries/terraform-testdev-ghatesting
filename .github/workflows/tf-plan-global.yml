@@ -108,7 +108,7 @@ jobs:
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: 0.12.31
+          terraform_version: 0.13.7
 
       # Create the terraform.tfvars file. This expects that all the commands are run in subfolders
       #   that are two (2) folders deep in the repository. It also depends on the PIPENV_PIPFILE environment

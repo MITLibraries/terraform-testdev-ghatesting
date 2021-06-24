@@ -12,7 +12,7 @@ Variable values in Parameter Store are organized by paths (analogous to folders)
 
 Thinking of this as a folder hierarchy, it would look like
 
-## Layout
+## Layout of variables in Parameter Store
 
 ```bash
 /tfvars
@@ -61,17 +61,18 @@ Thinking of this as a folder hierarchy, it would look like
                    |- variable_six
 ```
 
-Before running either of these scripts, dependencies must be installed. Either using `pip`:
+Before running either of these scripts, dependencies must be installed. It is easiest to do this from the subfolder where the `terraform` command is being run. Either using `pip`:
 
 ```bash
-cd scripts
-python3 -m pip install -r requirements.txt`
+cd <folder>/<subfolder>
+python3 -m pip install -r ../../scripts/requirements.txt`
 ```
 
-or using `pipenv`:
+or using `pipenv` (which will require setting the PIPENV_PIPFILE environment variable):
 
 ```bash
-cd scripts
+cd <folder>/<subfolder>
+export PIPENV_PIPFILE=../../scripts/Pipfile
 pipenv install
 ```
 
@@ -82,6 +83,13 @@ The `parameter_update.py` Python script will read variables from a local `<works
 ```bash
 cd <folder>/<subfolder>
 python3 ../../scripts/parameter_update.py -f <dev|test|global>.tfvars [-b <branch_name>]
+```
+
+or, if you are using `pipenv`:
+
+```bash
+cd <folder>/<subfolder>
+pipenv run python3 ../../scripts/parameter_update.py -f <dev|test|global>.tfvars [-b <branch_name>]
 ```
 
 The `-b <branch_name>` is optional. If it is not included, the checked out branch name will be used in the variable path. This will write the variable values found in `<workspace>.tfvars` to `/tfvars/<workspace>/<repository_name>/<branch_name>/<folder>/<subfolder>/<variable_name>`.
@@ -97,6 +105,14 @@ export TF_WORKSPACE=<dev|test|global>
 python3 ../../scripts/parameter_export.py -p <folder>/<subfolder> [-b <branch_name>]
 ```
 
+or, if you are using `pipenv`:
+
+```bash
+cd <folder>/<subfolder>
+export PIPENV_PIPFILE=../../scripts/Pipfile
+pipenv run python3 ../../scripts/parameter_export.py -p <folder>/<subfolder> [-b <branch_name>]
+```
+
 The `-b <branch_name>` is optional. If it is not included, the checked out branch name will be used in the variable path. This will pull all of the variables (and their values) from `/tfvars/<workspace>/<repository_name>/<branch_name>/<folder>/<subfolder>` and store them in a file named `terraform.tfvars`. It is up to the developer to move this file to the correctly named `.tfvars` folder for the workspace (e.g., `dev.tfvars`). When this is run in automation in GitHub Actions (in an active PR) the `-b` option IS used and makes use of the GitHub Actions `GITHUB_HEAD_REF` default environment variable.
 
 ### Cleanup pipenv
@@ -104,7 +120,7 @@ The `-b <branch_name>` is optional. If it is not included, the checked out branc
 It is good practice to clean up the temporary `pipenv` environment when you are done. This can be done with
 
 ```bash
-cd scripts
+cd <folder>/<subfolder>
 pipenv --rm
 rm -rf Pipfile.lock
 ```

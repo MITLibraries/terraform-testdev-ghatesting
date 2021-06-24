@@ -23,10 +23,11 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      PIPENV_PIPFILE: ../../scripts/Pipfile
     
     # This splits out a matrix of jobs that process the code in shared/network in the dev 
     #   workspace and the prod workspace.
-    name: Run Terraform Destroy
+    name: Run Terraform Destroy on "${{ matrix.tfenvs }}"
     strategy:
       matrix:
         tfenvs: [dev, test]
@@ -37,27 +38,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Setup the other necessary environment
-      - name: Path Setup
-        id: paths 
-        run: |
-          echo "::set-output name=varpath::/ghatesting/tfvars/${{ matrix.tfenvs }}/shared/network"
-          cp backend.hcl shared/network
-          cp scripts/aws_parse.py shared/network
-          cp scripts/requirements.txt shared/network
-
       # Setup terraform with the correct version
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: 0.12.31
+          terraform_version: 0.13.7
 
       # Create the terraform.tfvars file
       - name: Create tfvars
         run: |
           echo "working directory = shared/network/"
-          python3 -m pip install -r requirements.txt
-          python3 aws_parse.py -p ${{ steps.paths.outputs.varpath }}
+          export TF_WORKSPACE=${{ matrix.tfenvs }}
+          pip install pipenv
+          pipenv install
+          pipenv run python ../../scripts/parameter_export.py -p shared/network -b main
         working-directory: shared/network/
 
       # Run Terraform Init and Terraform Destroy
