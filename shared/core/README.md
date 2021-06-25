@@ -1,7 +1,7 @@
 # Apps / App1
 
 This is dummy Terraform code for GitHub Actions testing.
-
+**[modified to trigger tf-validate]**
 
 ## What's created?
 
