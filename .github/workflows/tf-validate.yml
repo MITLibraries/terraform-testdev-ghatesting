@@ -60,7 +60,7 @@ jobs:
           # Set output
           echo "::set-output name=matrix::$( echo "$JSON" )"
 
-  validate:
+  validatetwelve:
     # Set workflow environment variables
     env:
       AWS_DEFAULT_REGION: us-east-1
@@ -68,7 +68,8 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     
     # This splits out a matrix of jobs that process each of the folders with updates to terraform code.
-    name: Check Terraform syntax on "${{ matrix.tfpaths }}"
+    # This is explicitly Terraform v0.12.31
+    name: Check Terraform v0.12 syntax on "${{ matrix.tfpaths }}"
     needs: generate-matrix
     strategy:
       matrix: ${{fromJson(needs.generate-matrix.outputs.matrix)}}
@@ -81,12 +82,42 @@ jobs:
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
         with:
-          terraform_version: ${{ matrix.tfvers }}
+          terraform_version: 0.12.31
     
       # Run Terraform Validate
       - name: Validate
         run: |
           echo "${{ matrix.tfpaths }}"
-          echo ${{fromJson(needs.generate-matrix.outputs.matrix)}}
+          terraform fmt -check -recursive; terraform init -backend=false; terraform validate
+        working-directory: ${{ matrix.tfpaths }}
+
+  validatethirteen:
+    # Set workflow environment variables
+    env:
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    
+    # This splits out a matrix of jobs that process each of the folders with updates to terraform code.
+    # This is explicitly Terraform v0.13.7
+    name: Check Terraform v0.13 syntax on "${{ matrix.tfpaths }}"
+    needs: generate-matrix
+    strategy:
+      matrix: ${{fromJson(needs.generate-matrix.outputs.matrix)}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Setup terraform with the correct version
+      - name: Terraform Setup
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 0.13.7
+    
+      # Run Terraform Validate
+      - name: Validate
+        run: |
+          echo "${{ matrix.tfpaths }}"
           terraform fmt -check -recursive; terraform init -backend=false; terraform validate
         working-directory: ${{ matrix.tfpaths }}
