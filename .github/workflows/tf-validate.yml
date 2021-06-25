@@ -66,7 +66,6 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      FULL_MATRIX: ${{fromJson(needs.generate-matrix.outputs.matrix)}}
     
     # This splits out a matrix of jobs that process each of the folders with updates to terraform code.
     name: Check Terraform syntax on "${{ matrix.tfpaths }}"
@@ -88,6 +87,6 @@ jobs:
       - name: Validate
         run: |
           echo "${{ matrix.tfpaths }}"
-          echo $FULL_MATRIX
+          echo ${{fromJson(needs.generate-matrix.outputs.matrix)}}
           terraform fmt -check -recursive; terraform init -backend=false; terraform validate
         working-directory: ${{ matrix.tfpaths }}
