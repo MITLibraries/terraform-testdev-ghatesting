@@ -33,7 +33,7 @@ jobs:
       - name: Check changed files
         id: diff
         run: |
-          if [github.event.before != '0000000000000000000000000000000000000000']; then
+          if [ ${{ github.event.before }} = '0000000000000000000000000000000000000000']; then
             git fetch origin main --depth=1
             export MAIN_SHA=$( git rev-parse origin/main )
             export DIFF=$( git diff --dirstat=files,0,cumulative $MAIN_SHA $GITHUB_SHA | awk -F ' ' '{print $2}' | grep -vE '(^.github|^scripts|^tests|ansible|packer|vagrant)' )
