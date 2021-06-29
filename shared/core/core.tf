@@ -7,3 +7,4 @@ module "label" {
 }
 
 # This creates a simple EC2 instance.
+# This should trigger tf-validate
