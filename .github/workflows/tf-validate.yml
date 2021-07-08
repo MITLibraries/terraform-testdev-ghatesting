@@ -31,6 +31,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Check changed files
+        # On the very first push of a new branch to GitHub, the `github.event.before` is all zeros (because
+        #   there are no previous commits on the branch). To address this, the run command does a quick test
+        #   and if it's the first commit on a new branch, it forces a comparison to the most recent commit
+        #   on `origin/master` instead. For every subsequent commit, it compares the current commit on the branch
+        #   to the prior commit on the branch. The result of this step is a list of folder paths containing changes
+        #   to Terraform code. This list is used in the next step.
         id: diff
         run: |
           if [ ${{ github.event.before }} = 0000000000000000000000000000000000000000 ]; then
@@ -54,26 +60,22 @@ jobs:
       #   formatted matrix for the next job.
         id: set-matrix
         run: |
-          # See https://stackoverflow.com/a/62953566/11948346
           DIFF="${{ steps.diff.outputs.diff }}"
           JSON="{\"tfpaths\":["
 
-          # Loop by lines
           while read path; do
-          # Add item to the matrix only if it is not already included
-          JSONline="\"$path\","
-          if [[ "$JSON" != *"$JSONline"* ]]; then
-          JSON="$JSON$JSONline"
-          fi
+            JSONline="\"$path\","
+            if [[ "$JSON" != *"$JSONline"* ]]; then
+              JSON="$JSON$JSONline"
+            fi
           done <<< "$DIFF"
 
-          # Remove last "," and add closing brackets
           if [[ $JSON == *, ]]; then
-          JSON="${JSON%?}"
+            JSON="${JSON%?}"
           fi
           JSON="$JSON]}"
           echo $JSON
-          # Set output
+
           echo "::set-output name=matrix::$( echo "$JSON" )"
 
   validatetwelve:
@@ -86,8 +88,9 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_WORKSPACE: stage
     
-    name: Check Terraform syntax on "${{ matrix.tfpaths }}"
+    name: Check Terraform 0.12 syntax on "${{ matrix.tfpaths }}"
     # For each subfolder (path) in the matrix, this will run through the process of validating the terraform
     #   code. It starts by creating the job(s) from the matrix (typically just one job). Then it checks out the
     #   repository from GitHub and loads the terraform GitHub Action module, specifying an explicit version of
@@ -100,7 +103,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Setup terraform with the correct version
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v1
         with:
@@ -124,8 +126,9 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_WORKSPACE: stage
     
-    name: Check Terraform syntax on "${{ matrix.tfpaths }}"
+    name: Check Terraform 0.13 syntax on "${{ matrix.tfpaths }}"
     # For each subfolder (path) in the matrix, this will run through the process of validating the terraform
     #   code. It starts by creating the job(s) from the matrix (typically just one job). Then it checks out the
     #   repository from GitHub and loads the terraform GitHub Action module, specifying an explicit version of

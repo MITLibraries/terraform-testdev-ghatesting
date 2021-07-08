@@ -3,12 +3,9 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - '.github/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'shared/core/**'
-  workflow_dispatch:
+    paths:
+      - 'apps/**/*.tf'
+      - 'shared/network/*.tf'
 
 # Set defaults
 defaults:

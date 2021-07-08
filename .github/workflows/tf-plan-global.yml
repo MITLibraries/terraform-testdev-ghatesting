@@ -4,8 +4,7 @@ on:
     branches:
       - main
     paths:
-      - 'shared/core/**'
-  workflow_dispatch:
+      - 'shared/core/*.tf'
 
 # Set defaults
 defaults:
