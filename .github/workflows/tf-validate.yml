@@ -37,21 +37,28 @@ jobs:
         #   on `origin/master` instead. For every subsequent commit, it compares the current commit on the branch
         #   to the prior commit on the branch. The result of this step is a list of folder paths containing changes
         #   to Terraform code. This list is used in the next step.
+        #
+        # The awk/sed/grep filtering on the output from `git diff` does the following
+        #   * isolates just the folder paths (awk)
+        #   * strips trailing slashes (sed)
+        #   * strips subfolders that do not contain .tf files (grep -vE)
+        #   * removes top-level folders that only hold subfolders and not .tf files (grep -E)
+        # The final line before setting the outpu from this step is to escape newlines (replace \n with %0A)
         id: diff
         run: |
           if [ ${{ github.event.before }} = 0000000000000000000000000000000000000000 ]; then
             git fetch origin main --depth=1
             export MAIN_SHA=$( git rev-parse origin/main )
-            export DIFF=$( git diff --dirstat=files,0,cumulative $MAIN_SHA $GITHUB_SHA | awk -F ' ' '{print $2}' | grep -vE '(^.github|^scripts|^tests|ansible|packer|vagrant)' )
+            export DIFF=$( git diff --dirstat=files,0,cumulative $MAIN_SHA $GITHUB_SHA | awk -F ' ' '{print $2}' | sed 's:/*$::' | grep -vE '(^.github|^scripts|^tests|^docs|ansible|packer|vagrant)' | grep -E '(\/)' )
             echo "Push Diff between $MAIN_SHA and $GITHUB_SHA"
             echo "$DIFF"
           else
             git fetch origin ${{ github.event.before }} --depth=1
-            export DIFF=$( git diff --dirstat=files,0,cumulative ${{ github.event.before }} $GITHUB_SHA | awk -F ' ' '{print $2}' | grep -vE '(^.github|^scripts|^tests|ansible|packer|vagrant)' )
+            export DIFF=$( git diff --dirstat=files,0,cumulative ${{ github.event.before }} $GITHUB_SHA | awk -F ' ' '{print $2}' | sed 's:/*$::' | grep -vE '(^.github|^scripts|^tests|^docs|ansible|packer|vagrant)' | grep -E '(\/)' )
             echo "Push Diff between ${{ github.event.before }} and $GITHUB_SHA"
             echo "$DIFF"
           fi
-          # Escape newlines (replace \n with %0A)
+
           echo "::set-output name=diff::$( echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g' )"
       - name: Set matrix for terraform validate
       # This block actually creates the matrix. See https://stackoverflow.com/a/62953566/11948346 for the original source of
@@ -77,44 +84,6 @@ jobs:
           echo $JSON
 
           echo "::set-output name=matrix::$( echo "$JSON" )"
-
-  validatetwelve:
-  # This job executes the `terraform validate` job (for Terraform v0.12.31) for each of the subfolders in the matrix 
-  #   output from the previous job. We start by setting environment variables that will be used throughout this 
-  #   job: the AWS region and the AWS access key and secret (the latter two are stored as secrets in the GitHub 
-  #   repository). For some reason, even with `terraform init -backend=false` the `terraform validate` wants AWS 
-  #   credentials and some of our code requires that it is run in a workspace, so we set `TF_WORKSPACE` to `stage`.
-    env:
-      AWS_DEFAULT_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      TF_WORKSPACE: stage
-    
-    name: Check Terraform 0.12 syntax on "${{ matrix.tfpaths }}"
-    # For each subfolder (path) in the matrix, this will run through the process of validating the terraform
-    #   code. It starts by creating the job(s) from the matrix (typically just one job). Then it checks out the
-    #   repository from GitHub and loads the terraform GitHub Action module, specifying an explicit version of
-    #   Terraform. Finally, it runs `terraform fmt`, `terraform init` (with no backend), and `terraform validate`. 
-    needs: generate-matrix
-    strategy:
-      matrix: ${{fromJson(needs.generate-matrix.outputs.matrix)}}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Terraform Setup
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: 0.12.31
-    
-      # Run Terraform checks: first check canonical formatting (fmt -check -recusive), then init and validate.
-      #   All of these are run in the `stage` workspace (TF_WORKSPACE is set as an environment variable above).
-      - name: Format check and Validate
-        run: |
-          echo "${{ matrix.tfpaths }}"
-          terraform fmt -check -recursive; terraform init -backend=false; terraform validate
-        working-directory: ${{ matrix.tfpaths }}
 
   validatethirteen:
   # This job executes the `terraform validate` job (for Terraform v0.13.7) for each of the subfolders in the matrix 
