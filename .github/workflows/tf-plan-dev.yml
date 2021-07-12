@@ -34,12 +34,12 @@ jobs:
           if [ $GITHUB_BASE_REF ]; then
             # Pull Request
             git fetch origin $GITHUB_BASE_REF --depth=1
-            export DIFF=$( git diff --dirstat=files,0,cumulative origin/$GITHUB_BASE_REF $GITHUB_SHA | awk -F ' ' '{print $2}' | sed 's:/*$::' | grep -vE '(^.github|^scripts|^tests|^docs|ansible|packer|vagrant)' | grep -E '(\/)' )
+            export DIFF=$( git diff --dirstat=files,0,cumulative origin/$GITHUB_BASE_REF $GITHUB_SHA | awk -F ' ' '{print $2}' | sed 's:/*$::' | grep -vE '(^.github|^scripts|^tests|^docs|^shared/c|ansible|packer|vagrant)' | grep -E '(\/)' )
             echo "PR Diff between origin/$GITHUB_BASE_REF and $GITHUB_SHA"
           else
             # Push
             git fetch origin ${{ github.event.before }} --depth=1
-            export DIFF=$( git diff --dirstat=files,0,cumulative ${{ github.event.before }} $GITHUB_SHA | awk -F ' ' '{print $2}' | sed 's:/*$::' | grep -vE '(^.github|^scripts|^tests|^docs|ansible|packer|vagrant)' | grep -E '(\/)' )
+            export DIFF=$( git diff --dirstat=files,0,cumulative ${{ github.event.before }} $GITHUB_SHA | awk -F ' ' '{print $2}' | sed 's:/*$::' | grep -vE '(^.github|^scripts|^tests|^docs|^shared/c|ansible|packer|vagrant)' | grep -E '(\/)' )
             echo "Push Diff between ${{ github.event.before }} and $GITHUB_SHA"
           fi
           echo "$DIFF"
