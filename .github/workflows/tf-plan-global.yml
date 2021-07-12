@@ -4,8 +4,7 @@ on:
     branches:
       - main
     paths:
-      - 'shared/core/**'
-  workflow_dispatch:
+      - 'shared/core/*.tf'
 
 # Set defaults
 defaults:
@@ -24,9 +23,12 @@ jobs:
       - uses: actions/checkout@v2
       - name: Check changed files
         id: diff
-        # The messy awk/sed/grep filter after the git diff command is intended to force this to only list the ./shared/core/
-        #   folder for processing with the "global" workspace. I tried to get this to work in one workflow with some if 
-        #   statements in the matrix:strategy portion, but it didn't work.
+        # The awk/sed/grep filtering on the output from `git diff` does the following
+        #   * isolates just the folder paths (awk)
+        #   * strips trailing slashes (sed)
+        #   * strips subfolders that do not contain .tf files
+        #   * removes top-level folders that only hold subfolders and not .tf files
+        # The final line before setting the outpu from this step is to escape newlines (replace \n with %0A)
         run: |
           if [ $GITHUB_BASE_REF ]; then
             # Pull Request
@@ -43,6 +45,10 @@ jobs:
           # Escape newlines (replace \n with %0A)
           echo "::set-output name=diff::$( echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g' )"
       - name: Set matrix for build
+        # This block actually creates the matrix. See https://stackoverflow.com/a/62953566/11948346 for the original source of
+        #   this code. It sets two variables, DIFF and JSON, and then loops through the lines, only adding entries if it doesn't
+        #   already exist. Finally, it removes the trailing comma and adds the closing brackets with the result being a properly
+        #   formatted matrix for the next job.
         id: set-matrix
         run: |
           # See https://stackoverflow.com/a/62953566/11948346
