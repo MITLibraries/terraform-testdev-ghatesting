@@ -1,15 +1,5 @@
 name: Terraform Apply to Test Workspace
 on: 
-  pull_request:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'shared/core/**'
-    types:
-      - closed
   workflow_dispatch:
 
 # Set defaults
